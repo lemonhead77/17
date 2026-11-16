@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seventeen Months</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbf6f1;
+    --glow: #f6e6df;
+    --card: #fffdfb;
+    --ink: #2b1d22;
+    --muted: #8a737a;
+    --accent: #c2415d;
+    --line: #ecdfe2;
+    --shadow: 0 24px 60px -28px rgba(120, 40, 60, .45);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1316;
+      --glow: #2a1d21;
+      --card: #251b1f;
+      --ink: #f5e9ec;
+      --muted: #b49ca3;
+      --accent: #ee7b93;
+      --line: #3a2a2f;
+      --shadow: 0 24px 60px -28px rgba(0, 0, 0, .8);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: radial-gradient(ellipse at 50% 55%, var(--glow), var(--bg) 65%) fixed, var(--bg);
+    color: var(--ink);
+    font-family: Inter, system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 40px 16px 32px;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  header { text-align: center; opacity: 0; animation: rise 1s .1s forwards; }
+  .eyebrow { font-size: .72rem; letter-spacing: .28em; text-transform: uppercase; color: var(--muted); }
+  h1 {
+    font-family: Fraunces, Georgia, serif; font-weight: 300;
+    font-size: clamp(2.2rem, 8vw, 3.4rem); line-height: 1.1; margin-top: 8px;
+  }
+  h1 em { color: var(--accent); }
+  .hint { margin-top: 10px; color: var(--muted); font-size: .9rem; }
+
+  .bouquet { width: min(100%, 480px); margin-top: 4px; opacity: 0; animation: rise 1.2s .4s forwards; }
+  .bouquet svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+  .sway { transform-origin: 200px 450px; animation: sway 7s ease-in-out infinite; }
+
+  .petal {
+    pointer-events: none;
+    filter: drop-shadow(0 1px 1.2px rgba(70, 10, 25, .28));
+    transition: transform .25s ease, filter .4s ease;
+  }
+  .petal.tiny { filter: none; }
+  .petal.has-note { pointer-events: auto; cursor: pointer; }
+  .petal.has-note:hover, .petal.has-note:focus-visible, .petal.has-note.hover {
+    transform: scale(1.08);
+    filter: drop-shadow(0 2px 3px rgba(70, 10, 25, .35)) brightness(1.08);
+    outline: none;
+  }
+  .petal.has-note.read { filter: drop-shadow(0 1px 1.2px rgba(70, 10, 25, .2)) saturate(.6) brightness(1.06); }
+  .deco { pointer-events: none; }
+
+  /* Hidden-note markers: a soft twinkle until opened, then a tiny heart */
+  .mark { cursor: pointer; }
+  .sparkle {
+    fill: #fffdf4;
+    filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 3px rgba(255, 214, 120, .9));
+    animation: twinkle 2.6s ease-in-out infinite;
+  }
+  .mark .seen { fill: #fff; opacity: .9; filter: drop-shadow(0 0 1.5px rgba(120, 20, 50, .6)); }
+  @keyframes twinkle {
+    0%, 100% { opacity: .35; }
+    50% { opacity: 1; }
+  }
+
+  .progress { color: var(--muted); font-size: .85rem; margin-top: 4px; min-height: 1.2em; text-align: center; }
+
+  /* Note */
+  .overlay {
+    position: fixed; inset: 0; z-index: 20;
+    background: rgba(30, 15, 20, .35);
+    backdrop-filter: blur(3px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    padding: 16px;
+    opacity: 0; pointer-events: none; transition: opacity .3s;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .note {
+    position: relative;
+    width: min(84vw, 330px); aspect-ratio: 33 / 44; max-height: 72vh;
+    transform: scale(.35) rotate(-12deg); transform-origin: 50% 100%;
+    transition: transform .55s cubic-bezier(.25,.9,.3,1.15);
+  }
+  .overlay.show .note { transform: none; }
+  .note svg {
+    position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible;
+    filter: drop-shadow(0 18px 30px rgba(40, 10, 20, .35));
+  }
+  .note-body {
+    position: absolute; left: 16%; right: 16%; top: 13%; bottom: 30%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .note .num { font-size: .66rem; letter-spacing: .24em; text-transform: uppercase; opacity: .7; }
+  .note p {
+    font-family: Fraunces, Georgia, serif; font-weight: 300; font-style: italic;
+    font-size: clamp(1.05rem, 4.6vw, 1.3rem); line-height: 1.4; margin-top: 8px;
+  }
+  .note.light-ink { text-shadow: 0 1px 6px rgba(30, 0, 40, .45); }
+  /* longer notes get a bigger petal and smaller type; anything extra scrolls */
+  .note-body p {
+    overflow-y: auto; scrollbar-width: none; max-height: 100%;
+    -webkit-mask-image: linear-gradient(transparent, #000 6%, #000 94%, transparent);
+            mask-image: linear-gradient(transparent, #000 6%, #000 94%, transparent);
+    padding: 6px 0;
+  }
+  .note-body p::-webkit-scrollbar { display: none; }
+  .note.long { width: min(90vw, 400px); max-height: 80vh; }
+  .note.long p { font-size: clamp(.98rem, 4vw, 1.12rem); }
+  .note.xl { width: min(94vw, 470px); max-height: 84vh; }
+  .note.xl .note-body { left: 13%; right: 13%; top: 11%; bottom: 15%; }
+  .note.xl p { font-size: clamp(.86rem, 3.6vw, .98rem); line-height: 1.42; }
+  #close {
+    border: 0; cursor: pointer; padding: 9px 18px; border-radius: 999px;
+    background: var(--card); color: var(--accent);
+    font: 500 .85rem Inter, sans-serif; letter-spacing: .06em;
+    box-shadow: var(--shadow);
+  }
+
+  footer { margin-top: auto; padding-top: 24px; color: var(--muted); font-size: .8rem; }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes sway { 0%, 100% { transform: rotate(-1deg); } 50% { transform: rotate(1deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">Happy 17 months</p>
+    <h1>a bouquet <em>for you</em></h1>
+    <p class="hint">17 petals are hiding notes ✦ tap the ones that twinkle</p>
+  </header>
+
+  <div class="bouquet">
+    <svg id="svg" viewBox="20 40 360 560" role="img" aria-label="A bouquet of flowers"></svg>
+  </div>
+  <p class="progress" id="progress"></p>
+
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="note" id="note" role="dialog" aria-modal="true" aria-labelledby="note-text">
+      <svg id="note-svg" preserveAspectRatio="none">
+        <path id="note-path" vector-effect="non-scaling-stroke"></path>
+        <path id="note-vein" fill="none" stroke="#fff" stroke-opacity=".14" stroke-width="1.2" vector-effect="non-scaling-stroke"></path>
+      </svg>
+      <div class="note-body" id="note-body">
+        <div class="num" id="note-num"></div>
+        <p id="note-text"></p>
+      </div>
+    </div>
+    <button id="close">close ♥</button>
+  </div>
+
+  <footer>made with love, just for you</footer>
+
+<script>
+  // ── Edit these: one note per month (they open in order) ──────────
+  const NOTES = [
+    `I love how throughout our time together, my humor has become like yours and yours like mine. Every once in awhile I catch you taking the low-hanging fruit.`,
+    `It is impossible not to be proud of you, not only for how hard you've worked, but because of how much you believe in yourself, though also being your hardest critic.`,
+    `I could never truly get angry at you. In some ways, you are just a (my) girl, like you say :)`,
+    `The day that we've gone a week without annoying each other, I know something's wrong.`,
+    `I love how you are my lover and friend in one. Yes, we've said this before, but I genuinely couldn't appreciate it more. One second we could be making fart jokes and then I start kissing you on your belly button, making you squirm.`,
+    `It genuinely alters my day just hearing about your good day, and I wouldn't trade that feeling for anything in the World. (capital W joke, but I'm serious otherwise)`,
+    `Time always goes too fast with you, but your planning of our day always slows it down by a bit, which I will endlessly appreciate.`,
+    `I love envisioning our future where we have any mix of cats, dogs, mini Mya's and Aidan's, infinite mixtures of the three ;). We'll have no shortage of names to think of.`,
+    `Ok, it's stupid, I'll admit: the reason I can't forget that one girl's Instagram story glazing Drake and how he has a song for every mood is because that is exactly how I feel with you. We have been through every mood together. Happiness, sadness, excitedness, anger, bitterness, pettiness, pain-in-the-stomach-laughing, tiredness, I-want-to-kill-you-right-now-ness, lovey-ness, and so many more. I am confident I can enjoy going through any feelings with you no matter how good or bad they are, because you really are that person for me. You are that wildcard, where no matter how good or bad things are, I know you'll celebrate with me or be there for me. And you will always be able to rely on me to return the favor.`,
+    `Every time you ask me for help with something, I get so incredibly excited because all I want to be is useful to you and for us to love each other. That's it. I will sit, patiently waiting for you, like a dog waiting for a command from his owner, only so I can make your life easier and I get the satisfaction that I did. I love you so dearly.`,
+    `Every time we ragebait each other, I just feel closer of a friend with you while remaining as close as partners, which is the best.`,
+    `I love learning anything and everything from you. You never fail to amaze me every day with what you know, a new thing about yourself, or your perspective on something. If you were a professor where your only lecture section was talking about your own thoughts and perspectives, I wouldn't miss a class, and I'd like to think many people wouldn't either.`,
+    `Warning: don't let me catch you hating on Mya Tyler again. She works incredibly hard day after day, and if that hating was coming from anyone else, I would air that person out. But the hating comes from herself!`,
+    `You remember when we'd be hanging out at your house, and you'd call me Smokey's stepdad? I honestly felt very fatherly. Now imagine how amazing it will be to truly share a cat, dog, and even a child together???? I can't even fathom what an amazing feeling that will be. And the most amazing part about it is I share custody of that future child/pet with the best person out there.`,
+    `I always feel so honored that you take the time to share about your culture with me, whether it's music, dancing, societal norms, the microaggressions you've experienced, and so much more. It makes me feel so close to you, and that trust is something I will never again take for granted.`,
+    `You have opened up to me in such a way that I could never ask anything differently from you. Considering your past and how the word, trust, was defined for you growing up, I couldn't be any more grateful. The way that you let me in, put your guard down, and trusted me is such a sign of strength, trust, and selflessness in effort to get us closer. You recognized that's something I really needed, and you gave it to me without a second glance, and I didn't recognize how hard that was for you and how much effort it took for you to override these protections you've had for yourself for the longest time.`,
+    `I have such a weakness for you, you seriously have no idea. I sometimes forget that you are all mine, and that you welcome (just about) anything. Forgive me for such foolishness, I will make it up to you.`
+  ];
+  // ────────────────────────────────────────────────────────────────
+
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("svg");
+  const el = (tag, attrs = {}, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  // seeded random so the bouquet looks the same every visit
+  let seed = 17;
+  const rand = (a = 0, b = 1) => { seed = (seed * 16807) % 2147483647; return a + (b - a) * (seed / 2147483647); };
+
+  const defs = el("defs", {}, svg);
+  const linGrad = (id, stops, x1 = 0, y1 = 1, x2 = 0, y2 = 0) => {
+    const g = el("linearGradient", { id, x1, y1, x2, y2 }, defs);
+    stops.forEach(([o, c]) => el("stop", { offset: o, "stop-color": c }, g));
+    return `url(#${id})`;
+  };
+  const radGrad = (id, stops) => {
+    const g = el("radialGradient", { id, cx: .5, cy: .5, r: .5 }, defs);
+    stops.forEach(([o, c]) => el("stop", { offset: o, "stop-color": c }, g));
+    return `url(#${id})`;
+  };
+
+  // Palettes: base (near the flower's heart), mid, tip (outer edge), edge (outline)
+  const PAL = {
+    blush:    { base: "#d9738a", mid: "#f2a7b8", tip: "#fde1e7", edge: "#b8566d" },
+    red:      { base: "#6e0d22", mid: "#a8203d", tip: "#d9455f", edge: "#560818" },
+    peach:    { base: "#e47549", mid: "#f6a882", tip: "#ffe0cc", edge: "#c45a32" },
+    butter:   { base: "#e2a92e", mid: "#f6d27a", tip: "#fff4cf", edge: "#c08a1c" },
+    white:    { base: "#d9d2c6", mid: "#f3efe8", tip: "#ffffff", edge: "#c2b8a9" },
+    coral:    { base: "#b9324d", mid: "#e05a72", tip: "#ffa6b4", edge: "#962440" },
+    lavender: { base: "#6d4fa6", mid: "#9a7fd0", tip: "#dccff6", edge: "#563b8a" },
+    pink:     { base: "#df7fa0", mid: "#f4b3c9", tip: "#feebf2", edge: "#c2617f" },
+    sun:      { base: "#d98a0b", mid: "#f6b81c", tip: "#ffe066", edge: "#b8700a" },
+    tulip:    { base: "#4e2a8a", mid: "#7d52c4", tip: "#c4a6f0", edge: "#3d1f70" },
+    lilacD:   { base: "#7a5aa8", mid: "#a283d2", tip: "#d4c0f0", edge: "#62458f" },
+    lilacL:   { base: "#a58bd0", mid: "#c7b2ea", tip: "#efe6fb", edge: "#8a6fb8" },
+  };
+  for (const k in PAL) {
+    const p = PAL[k];
+    p.fill = linGrad("g-" + k, [[0, p.base], [.55, p.mid], [1, p.tip]]);
+  }
+  const LEAF = linGrad("g-leaf", [[0, "#3f6531"], [.6, "#6c9a52"], [1, "#9cc27a"]]);
+  const LEAF_DARK = linGrad("g-leaf-d", [[0, "#2f4f25"], [1, "#5d8746"]]);
+  const STEM = linGrad("g-stem", [[0, "#4b6e3b"], [1, "#7aa25e"]], 0, 0, 1, 0);
+  const EUCA = linGrad("g-euca", [[0, "#7f9c90"], [1, "#b9cfc4"]]);
+  const KRAFT = linGrad("g-kraft", [[0, "#b98c5e"], [1, "#e2c49c"]], 0, 1, 1, 0);
+  const KRAFT_D = linGrad("g-kraft-d", [[0, "#9e7247"], [1, "#d1ad80"]], 1, 1, 0, 0);
+  const KRAFT_BACK = linGrad("g-kraft-b", [[0, "#c9a477"], [1, "#efdcc0"]]);
+  const RIBBON = linGrad("g-ribbon", [[0, "#8e1f3a"], [.5, "#c2415d"], [1, "#e0738a"]], 0, 0, 1, 1);
+  const DISK = radGrad("g-disk", [[0, "#8a5a10"], [.35, "#d99a1e"], [1, "#f5c84a"]]);
+  const SUNDISK = radGrad("g-sundisk", [[0, "#2a1406"], [.6, "#4a260c"], [.88, "#6b3a12"], [1, "#8a5a1a"]]);
+
+  // ── Shapes ────────────────────────────────────────────────────
+  // cupped, slightly ruffled petal (roses, ranunculus)
+  const cupPetal = (r, w) => {
+    const ruffle = r * .05;
+    return `M0 ${r * .04} C ${-w * .95} ${-r * .08}, ${-w * 1.1} ${-r * .72}, ${-w * .55} ${-r * .95}
+            Q ${-w * .25} ${-r * 1.06 - ruffle}, 0 ${-r * 1.0} Q ${w * .25} ${-r * 1.06 + ruffle}, ${w * .55} ${-r * .95}
+            C ${w * 1.1} ${-r * .72}, ${w * .95} ${-r * .08}, 0 ${r * .04} Z`;
+  };
+  // long petal with a notched tip (daisy)
+  const rayPetal = (r, w) =>
+    `M0 0 C ${-w} ${-r * .25}, ${-w * 1.1} ${-r * .8}, ${-w * .55} ${-r * .98}
+     Q ${-w * .2} ${-r * 1.02}, 0 ${-r * .93} Q ${w * .2} ${-r * 1.02}, ${w * .55} ${-r * .98}
+     C ${w * 1.1} ${-r * .8}, ${w} ${-r * .25}, 0 0 Z`;
+  // tulip petal, pointed tip
+  const tulipPetal = (r, w, lean = 0) =>
+    `M0 0 C ${-w * 1.05} ${-r * .12}, ${-w * 1.15} ${-r * .72}, ${-w * .45 + lean} ${-r * 1.02}
+     Q ${lean} ${-r * 1.18}, ${w * .45 + lean} ${-r * 1.02}
+     C ${w * 1.15} ${-r * .72}, ${w * 1.05} ${-r * .12}, 0 0 Z`;
+  const leafPath = (len, w) =>
+    `M0 0 C ${w} ${-len * .2}, ${w * 1.1} ${-len * .65}, 0 ${-len} C ${-w * 1.1} ${-len * .65}, ${-w} ${-len * .2}, 0 0 Z`;
+
+  let current = [];   // petals of the flower being drawn
+  function addPetal(parent, d, pal, rotate, extra = "") {
+    const g = el("g", { transform: `rotate(${rotate}) ${extra}` }, parent);
+    const p = el("path", {
+      d, fill: pal.fill, stroke: pal.edge, "stroke-width": .6, "stroke-opacity": .5, class: "petal"
+    }, g);
+    p.dataset.ink = pal === PAL.tulip ? "#ffffff" : "#2b1a10";
+    current.push(p);
+    return p;
+  }
+  // a soft highlight vein down the middle of a petal
+  function vein(parent, r, rotate, opacity = .25) {
+    el("path", {
+      d: `M0 ${-r * .15} Q ${r * .04} ${-r * .5} 0 ${-r * .82}`,
+      stroke: "#fff", "stroke-opacity": opacity, "stroke-width": 1, fill: "none",
+      transform: `rotate(${rotate})`, class: "deco"
+    }, parent);
+  }
+
+  function rose(g, r, pal) {
+    const rings = [
+      { n: 5, k: 1.00, w: .66, off: rand(0, 72) },
+      { n: 5, k: .80,  w: .58, off: rand(0, 72) },
+      { n: 5, k: .60,  w: .52, off: rand(0, 72) },
+      { n: 4, k: .42,  w: .50, off: rand(0, 90) },
+    ];
+    rings.forEach(ring => {
+      for (let i = 0; i < ring.n; i++) {
+        const a = ring.off + (360 / ring.n) * i + rand(-8, 8);
+        const rr = r * ring.k * rand(.92, 1.06);
+        addPetal(g, cupPetal(rr, rr * ring.w), pal, a);
+      }
+    });
+    // tight spiral bud in the middle
+    const c = el("g", { class: "deco" }, g);
+    el("circle", { r: r * .22, fill: pal.base }, c);
+    for (let i = 0; i < 4; i++) {
+      const s = r * (.2 - i * .04);
+      el("path", {
+        d: `M ${-s} 0 A ${s} ${s * .9} 0 1 1 ${s * .55} ${-s * .55}`,
+        fill: "none", stroke: pal.edge, "stroke-width": 1.3, "stroke-linecap": "round",
+        transform: `rotate(${i * 95 + 20})`, opacity: .85
+      }, c);
+    }
+    el("path", {
+      d: `M ${-r * .08} ${-r * .02} q ${r * .08} ${-r * .1} ${r * .14} 0`,
+      fill: "none", stroke: pal.mid, "stroke-width": 1.2, "stroke-linecap": "round"
+    }, c);
+  }
+
+  function ranunculus(g, r, pal) {
+    const rings = 6;
+    for (let k = 0; k < rings; k++) {
+      const t = k / (rings - 1);
+      const n = Math.round(9 - t * 3);
+      const rr = r * (1 - t * .72);
+      const off = rand(0, 60);
+      for (let i = 0; i < n; i++) {
+        addPetal(g, cupPetal(rr * rand(.95, 1.04), rr * .48), pal, off + (360 / n) * i + rand(-5, 5));
+      }
+    }
+    el("circle", { r: r * .13, fill: "#8faa5c", class: "deco" }, g);
+    el("circle", { r: r * .07, fill: "#6a8540", class: "deco" }, g);
+  }
+
+  function daisy(g, r, pal) {
+    for (let layer = 0; layer < 2; layer++) {
+      const n = 16, off = layer * 11 + rand(0, 10);
+      for (let i = 0; i < n; i++) {
+        const rr = r * (layer ? .9 : 1) * rand(.9, 1.05);
+        const a = off + (360 / n) * i + rand(-3, 3);
+        addPetal(g, rayPetal(rr, rr * .13), pal, a);
+        vein(g, rr, a, .5);
+      }
+    }
+    const disk = el("g", { class: "deco" }, g);
+    el("circle", { r: r * .3, fill: DISK, stroke: "#9b6a12", "stroke-width": .8 }, disk);
+    // golden-angle seed pattern
+    for (let i = 0; i < 70; i++) {
+      const rr = Math.sqrt(i / 70) * r * .27, a = i * 137.5 * Math.PI / 180;
+      el("circle", { cx: rr * Math.cos(a), cy: rr * Math.sin(a), r: .9 + (i / 70) * .6, fill: i < 25 ? "#6e4508" : "#c48712" }, disk);
+    }
+  }
+
+  function sunflower(g, r, pal) {
+    // two rings of long pointed petals
+    for (let layer = 0; layer < 2; layer++) {
+      const n = 22, off = layer * (180 / n) + rand(0, 6);
+      for (let i = 0; i < n; i++) {
+        const rr = r * (layer ? .88 : 1) * rand(.9, 1.06);
+        const a = off + (360 / n) * i + rand(-3, 3);
+        addPetal(g, tulipPetal(rr, rr * .13, rand(-1.5, 1.5)), pal, a);
+        vein(g, rr, a, .35);
+      }
+    }
+    const disk = el("g", { class: "deco" }, g);
+    el("circle", { r: r * .42, fill: SUNDISK }, disk);
+    // golden-angle seeds
+    const N = 160;
+    for (let i = 0; i < N; i++) {
+      const t = i / N, rr = Math.sqrt(t) * r * .39, a = i * 137.5 * Math.PI / 180;
+      el("circle", {
+        cx: rr * Math.cos(a), cy: rr * Math.sin(a), r: .8 + t * 1.1,
+        fill: t > .8 ? "#a0701e" : t > .45 ? "#5a300e" : "#3a1c08"
+      }, disk);
+    }
+    el("circle", { r: r * .42, fill: "none", stroke: "#c9921f", "stroke-width": 1.5, opacity: .6 }, disk);
+  }
+
+  // lilac: a cone-shaped cluster of tiny four-petal florets
+  function lilac(g, r, pal) {
+    const H = r * 2.4, florets = [], ROWS = 16;
+    for (let j = 0; j <= ROWS; j++) {
+      const t = j / ROWS;                                    // 0 = base, 1 = tip
+      const half = r * .6 * Math.pow(1 - t, .6) * (t < .12 ? .75 + t * 2 : 1) + r * .06;
+      const s = r * (.21 - t * .08);
+      const n = Math.max(1, Math.round((half * 2) / (s * 1.05)));
+      for (let i = 0; i < n; i++) {
+        const x = n === 1 ? 0 : -half + (2 * half) * (i / (n - 1));
+        florets.push({ x: x + rand(-s * .4, s * .4), y: -t * H + rand(-s * .4, s * .4), s: s * rand(.85, 1.15) });
+      }
+    }
+    florets.sort((a, b) => Math.abs(a.x) - Math.abs(b.x)).reverse(); // edges behind, middle in front
+    florets.forEach((f, i) => {
+      const fg = el("g", { transform: `translate(${f.x} ${f.y})` }, g);
+      const p = i % 3 ? PAL.lilacL : PAL.lilacD;
+      const off = rand(0, 90);
+      for (let k = 0; k < 4; k++) {
+        addPetal(fg, cupPetal(f.s, f.s * .6), p, off + k * 90).classList.add("tiny");
+      }
+      el("circle", { r: f.s * .18, fill: "#fff3c4", class: "deco" }, fg);
+    });
+  }
+
+  // small filler blossoms (waxflower)
+  function waxflower(x, y) {
+    const g = el("g", { class: "deco" }, sway);
+    for (let i = 0; i < 6; i++) {
+      const bx = x + rand(-20, 20), by = y + rand(-16, 16), s = rand(5, 7);
+      el("path", { d: `M${x} ${y + 24} Q${(x + bx) / 2} ${by + 10} ${bx} ${by}`, stroke: "#7f9a64", "stroke-width": .8, fill: "none" }, g);
+      const b = el("g", { transform: `translate(${bx} ${by}) rotate(${rand(0, 72)})` }, g);
+      for (let k = 0; k < 5; k++) {
+        el("ellipse", { cx: 0, cy: -s * .55, rx: s * .38, ry: s * .55, fill: "#f6dbe6", stroke: "#d9a9bd", "stroke-width": .4, transform: `rotate(${k * 72})` }, b);
+      }
+      el("circle", { r: s * .22, fill: "#b8476b" }, b);
+    }
+  }
+
+  function tulip(g, r, pal) {
+    // back petals first, front petals overlap them
+    addPetal(g, tulipPetal(r * .95, r * .36), pal, -24, "translate(-2 0)");
+    addPetal(g, tulipPetal(r * .95, r * .36), pal, 24, "translate(2 0)");
+    addPetal(g, tulipPetal(r, r * .42, -2), pal, 0);
+    addPetal(g, tulipPetal(r * .9, r * .34, 4), pal, -11, "translate(-4 2)");
+    addPetal(g, tulipPetal(r * .9, r * .34, -4), pal, 11, "translate(4 2)");
+    for (const a of [-11, 0, 11]) vein(g, r * .9, a, .3);
+  }
+
+  // ── Layout ────────────────────────────────────────────────────
+  const BIND = { x: 200, y: 420 };   // where the stems meet under the ribbon
+  const FLOWERS = [
+    // the three stars
+    { type: daisy,      x: 214, y: 104, r: 22, pal: PAL.white },
+    { type: tulip,      x: 122, y: 152, r: 64, pal: PAL.tulip },
+    { type: lilac,      x: 292, y: 200, r: 50, pal: PAL.lilacD },
+    // filler daisies tucked around the edges
+    { type: daisy,      x: 76,  y: 262, r: 26, pal: PAL.white },
+    { type: daisy,      x: 330, y: 274, r: 24, pal: PAL.white },
+    { type: sunflower,  x: 196, y: 222, r: 70, pal: PAL.sun },
+    { type: daisy,      x: 136, y: 310, r: 22, pal: PAL.white },
+    { type: daisy,      x: 266, y: 312, r: 21, pal: PAL.white },
+  ];
+
+  // Back kraft paper fanning out behind everything
+  el("path", {
+    d: "M58 330 L96 196 L168 300 L200 250 L232 300 L304 196 L342 330 L200 590 Z",
+    fill: KRAFT_BACK, class: "deco"
+  }, svg);
+
+  const sway = el("g", { class: "sway" }, svg);
+
+  // Greenery: big leaves radiating from the bind point
+  const green = el("g", { class: "deco" }, sway);
+  [[-58, 205], [-38, 250], [-18, 235], [6, 290], [28, 245], [46, 240], [64, 200], [-70, 170], [78, 170]]
+    .forEach(([a, len]) => {
+      const lg = el("g", { transform: `translate(${BIND.x} ${BIND.y}) rotate(${a + rand(-4, 4)})` }, green);
+      // a short stem then the leaf
+      el("path", { d: `M0 0 L0 ${-len * .55}`, stroke: STEM, "stroke-width": 2.5 }, lg);
+      const leaf = el("g", { transform: `translate(0 ${-len * .5})` }, lg);
+      el("path", { d: leafPath(len * .5, len * .1), fill: a % 2 ? LEAF_DARK : LEAF }, leaf);
+      el("path", { d: `M0 0 Q 2 ${-len * .25} 0 ${-len * .48}`, stroke: "#cfe3b8", "stroke-opacity": .5, "stroke-width": 1, fill: "none" }, leaf);
+    });
+
+  // Eucalyptus sprigs
+  function eucalyptus(x2, y2, bend) {
+    const g = el("g", { class: "deco" }, sway);
+    const cx = (BIND.x + x2) / 2 + bend, cy = (BIND.y + y2) / 2;
+    el("path", { d: `M${BIND.x} ${BIND.y} Q${cx} ${cy} ${x2} ${y2}`, stroke: "#7a8f80", "stroke-width": 2, fill: "none" }, g);
+    for (let t = .45; t <= 1; t += .09) {
+      const x = (1 - t) ** 2 * BIND.x + 2 * (1 - t) * t * cx + t * t * x2;
+      const y = (1 - t) ** 2 * BIND.y + 2 * (1 - t) * t * cy + t * t * y2;
+      const s = 7 + (1 - t) * 6;
+      el("ellipse", { cx: x - s * .9, cy: y, rx: s, ry: s * .85, fill: EUCA, stroke: "#6f877a", "stroke-width": .5 }, g);
+      el("ellipse", { cx: x + s * .9, cy: y - 2, rx: s, ry: s * .85, fill: EUCA, stroke: "#6f877a", "stroke-width": .5 }, g);
+    }
+  }
+  eucalyptus(44, 168, -40);
+  eucalyptus(360, 176, 40);
+
+  // Baby's breath
+  function babysBreath(x2, y2) {
+    const g = el("g", { class: "deco" }, sway);
+    el("path", { d: `M${BIND.x} ${BIND.y} Q${(BIND.x + x2) / 2} ${(BIND.y + y2) / 2 + 20} ${x2} ${y2}`, stroke: "#8ea775", "stroke-width": 1.2, fill: "none" }, g);
+    for (let b = 0; b < 7; b++) {
+      const bx = x2 + rand(-30, 30), by = y2 + rand(-26, 22);
+      el("path", { d: `M${x2} ${y2 + 14} Q${(x2 + bx) / 2} ${by + 8} ${bx} ${by}`, stroke: "#9cb585", "stroke-width": .8, fill: "none" }, g);
+      for (let d = 0; d < 6; d++) {
+        el("circle", {
+          cx: bx + rand(-6, 6), cy: by + rand(-6, 6), r: rand(1.8, 3.2),
+          fill: "#fffdf8", stroke: "#d8d2c4", "stroke-width": .5
+        }, g);
+      }
+    }
+  }
+  babysBreath(200, 72);
+  babysBreath(36, 236);
+  babysBreath(368, 214);
+  babysBreath(140, 80);
+  waxflower(56, 196);
+  waxflower(352, 330);
+  waxflower(262, 92);
+  waxflower(46, 320);
+
+  // Stems
+  const stems = el("g", { class: "deco" }, sway);
+  FLOWERS.forEach(f => {
+    const cx = (f.x + BIND.x) / 2 + (f.x < BIND.x ? 18 : -18);
+    el("path", {
+      d: `M${BIND.x + (f.x - BIND.x) * .05} ${BIND.y + 30} Q${cx} ${(f.y + BIND.y) / 2} ${f.x} ${f.y}`,
+      fill: "none", stroke: STEM, "stroke-width": 3.6, "stroke-linecap": "round"
+    }, stems);
+  });
+
+  // Flowers, back to front
+  FLOWERS.forEach(f => {
+    const tilt = f.type === tulip || f.type === lilac ?Math.atan2(f.x - BIND.x, BIND.y - f.y) * 180 / Math.PI * .8 : rand(-15, 15);
+    const g = el("g", { transform: `translate(${f.x} ${f.y}) rotate(${tilt})` }, sway);
+    if (f.type === tulip) {
+      // sepal-ish green base
+      el("path", { d: "M-6 6 Q0 -6 6 6 Z", fill: "#4b6e3b", class: "deco" }, g);
+    }
+    current = f.petals = [];
+    f.type(g, f.r, f.pal);
+  });
+
+  // ── Pick the 17 petals that hold notes (sunflower, tulip, lilac only) ──
+  const find = t => FLOWERS.find(f => f.type === t).petals;
+  const sun = find(sunflower), tul = find(tulip), lil = find(lilac);
+  const lilFlorets = lil.length / 4;
+  const notePetals = [
+    ...[0, 3, 6, 8, 11, 14, 17, 19].map(i => sun[i]),               // 8 outer sunflower petals
+    tul[2], tul[3], tul[4],                                          // 3 front tulip petals
+    ...[2, 9, 17, 26, 36, 47].map(k => lil[(lilFlorets - 1 - k) * 4])  // 6 front lilac florets
+  ];
+
+  // sparkle layer sits on top of the flowers so every hidden note is visible
+  const sparkles = el("g", {}, sway);
+  const star = s => `M0 ${-s} Q ${s * .16} ${-s * .16} ${s} 0 Q ${s * .16} ${s * .16} 0 ${s} Q ${-s * .16} ${s * .16} ${-s} 0 Q ${-s * .16} ${-s * .16} 0 ${-s} Z`;
+  const heart = s => `M0 ${s * .35} C ${-s * 1.1} ${-s * .35}, ${-s * .45} ${-s * 1.05}, 0 ${-s * .45} C ${s * .45} ${-s * 1.05}, ${s * 1.1} ${-s * .35}, 0 ${s * .35} Z`;
+  const swayInv = sway.getCTM().inverse();
+  notePetals.forEach(p => {
+    p.classList.add("has-note");
+    p.setAttribute("tabindex", 0);
+    p.setAttribute("role", "button");
+    p.setAttribute("aria-label", "Open a note");
+    const b = p.getBBox();
+    const tiny = p.classList.contains("tiny");
+    const pt = svg.createSVGPoint();
+    pt.x = b.x + b.width / 2; pt.y = b.y + b.height * (tiny ? .5 : .32);
+    const m = swayInv.multiply(p.getCTM());
+    const q = pt.matrixTransform(m);
+    const s = tiny ? 4.2 : 5;
+    const mark = el("g", { transform: `translate(${q.x} ${q.y})`, class: "mark" }, sparkles);
+    el("circle", { r: s * 2.2, fill: "transparent" }, mark);   // bigger tap target
+    el("path", { d: star(s), class: "sparkle" }, mark).style.animationDelay = rand(0, 2.6).toFixed(2) + "s";
+    mark._petal = p; p._mark = mark;
+    mark._heart = heart(tiny ? 5 : 6.5);
+  });
+
+  // Front wrap
+  const wrap = el("g", { class: "deco" }, svg);
+  el("path", { d: "M100 352 Q160 372 236 360 L200 594 Z", fill: KRAFT }, wrap);
+  el("path", { d: "M300 352 Q236 376 172 384 L200 594 Z", fill: KRAFT_D }, wrap);
+  el("path", { d: "M300 352 Q236 376 172 384", stroke: "#f3e0c3", "stroke-width": 1.5, fill: "none", opacity: .7 }, wrap);
+  el("path", { d: "M150 372 L198 560", stroke: "#a87b4f", "stroke-width": 1, opacity: .35 }, wrap);
+  el("path", { d: "M262 372 L204 560", stroke: "#8b6139", "stroke-width": 1, opacity: .35 }, wrap);
+
+  // Ribbon bow
+  const rb = el("g", { transform: "translate(200 448)" }, wrap);
+  el("path", { d: "M-40 -6 Q0 6 40 -6 L38 8 Q0 20 -38 8 Z", fill: RIBBON }, rb);
+  el("path", { d: "M-4 4 L-22 62 L-13 56 L-8 66 L4 8 Z", fill: RIBBON }, rb);
+  el("path", { d: "M4 4 L20 58 L11 53 L6 63 L-2 8 Z", fill: RIBBON }, rb);
+  el("path", { d: "M0 2 C -18 -30, -48 -22, -38 -2 C -32 10, -14 8, 0 2 Z", fill: RIBBON }, rb);
+  el("path", { d: "M0 2 C 18 -30, 48 -22, 38 -2 C 32 10, 14 8, 0 2 Z", fill: RIBBON }, rb);
+  el("path", { d: "M-6 -2 C -18 -18, -34 -16, -32 -4", stroke: "#5e1024", "stroke-opacity": .35, fill: "none", "stroke-width": 1.2 }, rb);
+  el("path", { d: "M6 -2 C 18 -18, 34 -16, 32 -4", stroke: "#5e1024", "stroke-opacity": .35, fill: "none", "stroke-width": 1.2 }, rb);
+  el("ellipse", { cx: 0, cy: 2, rx: 8, ry: 7, fill: "#a52c48" }, rb);
+
+  // ── Notes: handed out in order, each petal keeps the note it opened ──
+  let next = 0;
+  const overlay = document.getElementById("overlay");
+  const progress = document.getElementById("progress");
+  const updateProgress = () => {
+    progress.textContent = next === 0 ? "" :
+      next >= NOTES.length ? "you've found all 17 ♥" : `${next} of ${NOTES.length} notes found`;
+  };
+
+  function openNote(petal) {
+    if (petal.dataset.note === undefined) {
+      petal.dataset.note = next % NOTES.length;
+      next++;
+      petal.classList.add("read");
+      // swap the twinkle for a tiny heart so she knows this one's been found
+      const mark = petal._mark;
+      mark.querySelector(".sparkle").remove();
+      el("path", { d: mark._heart, class: "seen" }, mark);
+      updateProgress();
+    }
+    const i = +petal.dataset.note;
+    document.getElementById("note-num").textContent = `note ${i + 1}`;
+    document.getElementById("note-text").textContent = NOTES[i];
+
+    // the card is the petal itself, scaled up
+    const b = petal.getBBox(), pad = Math.max(b.width, b.height) * .03;
+    const noteSvg = document.getElementById("note-svg");
+    noteSvg.setAttribute("viewBox", `${b.x - pad} ${b.y - pad} ${b.width + pad * 2} ${b.height + pad * 2}`);
+    const np = document.getElementById("note-path");
+    np.setAttribute("d", petal.getAttribute("d"));
+    np.setAttribute("fill", petal.getAttribute("fill"));
+    np.setAttribute("stroke", petal.getAttribute("stroke"));
+    np.setAttribute("stroke-opacity", .45);
+    const cx = b.x + b.width / 2;
+    document.getElementById("note-vein").setAttribute("d",
+      `M${cx} ${b.y + b.height * .97} Q${cx + b.width * .05} ${b.y + b.height * .55} ${cx} ${b.y + b.height * .1}`);
+    const note = document.getElementById("note");
+    note.style.color = petal.dataset.ink;
+    note.classList.toggle("light-ink", petal.dataset.ink === "#ffffff");
+    const len = NOTES[i].length;
+    note.classList.toggle("long", len > 150 && len <= 330);
+    note.classList.toggle("xl", len > 330);
+    document.getElementById("note-text").scrollTop = 0;
+
+    overlay.classList.add("show");
+    overlay.setAttribute("aria-hidden", "false");
+    document.getElementById("close").focus();
+  }
+  function closeNote() {
+    overlay.classList.remove("show");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+
+  svg.addEventListener("click", e => {
+    const mark = e.target.closest(".mark");
+    if (mark) return openNote(mark._petal);
+    if (e.target.classList.contains("has-note")) openNote(e.target);
+  });
+  // hovering a twinkle lifts its petal too
+  sparkles.addEventListener("pointerover", e => { const m = e.target.closest(".mark"); if (m) m._petal.classList.add("hover"); });
+  sparkles.addEventListener("pointerout", e => { const m = e.target.closest(".mark"); if (m) m._petal.classList.remove("hover"); });
+  svg.addEventListener("keydown", e => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("has-note")) {
+      e.preventDefault(); openNote(e.target);
+    }
+  });
+  overlay.addEventListener("click", e => { if (e.target === overlay) closeNote(); });
+  document.getElementById("close").addEventListener("click", closeNote);
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeNote(); });
+</script>
+</body>
+</html>
