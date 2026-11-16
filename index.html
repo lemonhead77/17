@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Seventeen Months</title>
+<title>17 with Mya</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -139,6 +139,37 @@
     box-shadow: var(--shadow);
   }
 
+  /* Hidden "reveal all" button: invisible until hovered (or focused) */
+  .reveal-btn {
+    position: fixed; top: 10px; right: 10px; z-index: 15;
+    border: 1px solid var(--line); background: var(--card); color: var(--muted);
+    font: 500 .72rem Inter, sans-serif; letter-spacing: .08em;
+    padding: 7px 12px; border-radius: 999px; cursor: pointer;
+    opacity: 0; transition: opacity .3s;
+  }
+  .reveal-btn:hover, .reveal-btn:focus-visible { opacity: 1; outline: none; }
+
+  .all-notes { width: min(100%, 560px); margin-top: 36px; scroll-margin-top: 28px; animation: rise .8s forwards; }
+  .all-notes h2 {
+    font-family: Fraunces, Georgia, serif; font-weight: 300; font-style: italic;
+    font-size: 1.8rem; text-align: center; margin-bottom: 18px;
+  }
+  .all-notes ol { list-style: none; padding: 0; display: grid; gap: 12px; counter-reset: n; }
+  .all-notes li {
+    counter-increment: n;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 18px 20px 18px 56px; position: relative;
+    font-family: Fraunces, Georgia, serif; font-weight: 300; font-size: 1.05rem; line-height: 1.55;
+  }
+  .all-notes li::before {
+    content: counter(n);
+    position: absolute; left: 18px; top: 17px;
+    width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--accent); color: #fff;
+    font: 500 .75rem Inter, sans-serif;
+  }
+
   footer { margin-top: auto; padding-top: 24px; color: var(--muted); font-size: .8rem; }
 
   @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
@@ -160,6 +191,12 @@
   </div>
   <p class="progress" id="progress"></p>
 
+  <button class="reveal-btn" id="reveal-btn" aria-controls="all-notes" aria-expanded="false">reveal all notes</button>
+  <section class="all-notes" id="all-notes" hidden>
+    <h2>all 17 notes</h2>
+    <ol id="all-notes-list"></ol>
+  </section>
+
   <div class="overlay" id="overlay" aria-hidden="true">
     <div class="note" id="note" role="dialog" aria-modal="true" aria-labelledby="note-text">
       <svg id="note-svg" preserveAspectRatio="none">
@@ -177,7 +214,7 @@
   <footer>made with love, just for you</footer>
 
 <script>
-  // ── Edit these: one note per month (they open in order) ──────────
+  //  ──────────
   const NOTES = [
     `I love how throughout our time together, my humor has become like yours and yours like mine. Every once in awhile I catch you taking the low-hanging fruit.`,
     `It is impossible not to be proud of you, not only for how hard you've worked, but because of how much you believe in yourself, though also being your hardest critic.`,
@@ -648,6 +685,19 @@
       e.preventDefault(); openNote(e.target);
     }
   });
+  // Reveal-all list
+  const revealBtn = document.getElementById("reveal-btn");
+  const allNotes = document.getElementById("all-notes");
+  const list = document.getElementById("all-notes-list");
+  NOTES.forEach(n => { const li = document.createElement("li"); li.textContent = n; list.appendChild(li); });
+  revealBtn.addEventListener("click", () => {
+    const show = allNotes.hidden;
+    allNotes.hidden = !show;
+    revealBtn.textContent = show ? "hide notes" : "reveal all notes";
+    revealBtn.setAttribute("aria-expanded", show);
+    if (show) allNotes.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
   overlay.addEventListener("click", e => { if (e.target === overlay) closeNote(); });
   document.getElementById("close").addEventListener("click", closeNote);
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeNote(); });
